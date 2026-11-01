@@ -1,0 +1,29 @@
+
+(function () {
+  const MEASUREMENT_ID = "G-NPR2RF3ESZ";
+
+  // Mencegah pemasangan ganda
+  if (window.__semaraAnalyticsLoaded) return;
+  window.__semaraAnalyticsLoaded = true;
+
+  // Menyiapkan Google Analytics
+  window.dataLayer = window.dataLayer || [];
+
+  function gtag() {
+    window.dataLayer.push(arguments);
+  }
+
+  window.gtag = gtag;
+
+  gtag("js", new Date());
+  gtag("config", MEASUREMENT_ID);
+
+  // Memuat Google Analytics
+  const script = document.createElement("script");
+  script.async = true;
+  script.src =
+    "https://www.googletagmanager.com/gtag/js?id=" +
+    MEASUREMENT_ID;
+
+  document.head.appendChild(script);
+})();
