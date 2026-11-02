@@ -1096,5 +1096,6 @@ function doPrint(){const off=document.createElement('canvas');off.width=1000;off
 $('#pa').innerHTML=`<h1 style="font-size:20px;margin:0">Ringkasan Hasil Pembelajaran</h1><p style="margin:2px 0 8px">Laboratorium Grafik Matematika Interaktif · Modul ${NM[mod]}<br>${new Date().toLocaleString('id-ID')}</p><div class=leg>${$('#leg').innerHTML}</div><img alt="Grafik" src="${off.toDataURL('image/png')}" style="width:100%;border:1px solid #bbb"><p style="font-size:12px;margin:4px 0">Tampilan grafik disesuaikan otomatis agar titik penting (titik puncak, sumbu simetri, titik potong sumbu, titik potong grafik/titik sudut) terlihat.</p><h3>Hasil &amp; karakteristik</h3>${$('#info').innerHTML}<h3>Langkah penyelesaian</h3>${$('#steps').innerHTML}`;setTimeout(()=>print(),120)}
 
 addEventListener('resize',()=>{asp();update()});setup('A');
-<\/script></body></html>
-</script></body></html>
+ </script>
+ <script src="monitoring.js"></script>
+ </body></html>
