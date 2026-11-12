@@ -566,9 +566,11 @@ const best=b=>{let m=-1;H.forEach(h=>{const v=calc(h.ids,h.a).per[b];if(v)m=Math
 function vDash(){const ss=H.map(h=>h.s),avg=ss.length?Math.round(ss.reduce((a,b)=>a+b,0)/ss.length):0,mx=ss.length?Math.max(...ss):0,fin=H.filter(h=>h.b===-1).pop();
 return`${kopHTML()}<h2>Tabe, ${U?esc(U.nama.split(" ")[0]):"Siswa"} </h2><p class=m>Ringkasan belajar Program Linier.</p>
 ${U?`<div class=card><b>${esc(U.nama)}</b><br><span class=m>NIS ${esc(U.nis)} · Kelas ${esc(U.kelas)} · ${esc(U.jur)} · ${esc(U.sek)}</span></div>`:`<div class="card no"><b>Data siswa belum diisi</b><p class=m>Isi dulu agar nilai tersimpan dan laporan memuat identitasmu.</p><button class=btn onclick="go('profil')">Isi data siswa</button></div>`}
+${dpBanner()}
 <div class=stats><div class=stat><span class=m>Sub-bab materi</span><b>${B.length}</b></div><div class=stat><span class=m>Latihan selesai</span><b>${H.length}</b></div><div class=stat><span class=m>Rata-rata nilai</span><b>${avg}</b></div><div class=stat><span class=m>Nilai tertinggi</span><b>${mx}</b></div><div class=stat><span class=m>Evaluasi final</span><b>${fin?fin.s:"–"}</b></div><div class=stat><span class=m>Tahap tumbuh</span><b style="font-size:1.15rem">${tahap(ringkas().avgB)}</b></div></div>
 ${vizDash()}
 <button class=btn onclick="start(-1)"><svg class=ico aria-hidden=true focusable=false><use href=#i-flag></use></svg> Mulai Evaluasi Final</button><button class="btn o" onclick="go('materi')"><svg class=ico aria-hidden=true focusable=false><use href=#i-book></use></svg> Belajar Materi</button><button class="btn o" onclick="go('latihan')"><svg class=ico aria-hidden=true focusable=false><use href=#i-pencil></use></svg> Latihan</button><button class="btn o" onclick="go('lap')"><svg class=ico aria-hidden=true focusable=false><use href=#i-doc></use></svg> Unduh Laporan</button>
+${DPANEL()}
 ${H.length?`<h3>Riwayat terakhir</h3>${H.slice(-3).reverse().map(h=>`<div class=card><b>${esc(h.t)}</b> <span class="badge ${h.s>=KKM?"":"no"}">${h.s}</span><br><span class=m>${dt(h.id)}</span></div>`).join("")}`:""}`}
 const short=t=>{const m=t.match(/\(([^)]+)\)/);return m?m[1]:t};
 function jump(id){const e=document.getElementById(id);if(e)e.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"})}
@@ -661,6 +663,7 @@ function dlLap(){if(!cekU())return;const n=(U.nama||"siswa").replace(/\W+/g,"_")
 function vLaporan(){return`<h2><svg class=ico aria-hidden=true focusable=false><use href=#i-doc></use></svg> Laporan Hasil Belajar</h2><p class=m>Rapor ringkas yang memuat identitas, Pohon Pengetahuan, grafik kemajuan, capaian tiap sub-bab, riwayat latihan, dan rekomendasi belajar.</p>
 ${U?"":`<div class="card no"><b>Data siswa belum diisi</b><p class=m>Isi dulu agar laporan memuat identitasmu.</p><button class=btn onclick="go('profil')">Isi data siswa</button></div>`}
 <div class=card><b>Unduh laporan</b><p class=m style="margin:.3em 0 .6em">Pilih <b>Cetak / Simpan PDF</b> untuk berkas PDF, atau <b>Unduh HTML</b> untuk berkas yang dapat dibuka tanpa aplikasi ini.</p><button class=btn onclick="prnLap()"><svg class=ico aria-hidden=true focusable=false><use href=#i-print></use></svg> Cetak / Simpan PDF</button><button class="btn o" onclick="dlLap()"><svg class=ico aria-hidden=true focusable=false><use href=#i-down></use></svg> Unduh HTML</button></div>
+${dpBanner()}${DPANEL()}
 <h3>Pratinjau</h3><div class=pvw>${rptAll()}</div>`}
 
 function render(){$("#nav").innerHTML=TABS.map(t=>`<button class="${t[0]===tab?"on":""}" ${t[0]===tab?'aria-current=page':""} onclick="go('${t[0]}')"><span class=ic>${t[1]}</span>${t[2]}</button>`).join("");
@@ -683,6 +686,61 @@ const N={nama:nm,nis:ni,kelas:v("kelas"),jur:v("jur"),sek:v("sek")};
 if(U&&H.length&&U.nama.toLowerCase()!==N.nama.toLowerCase()){if(!confirm("Nama berbeda dari profil sebelumnya. Riwayat nilai profil lama akan dihapus dari perangkat ini agar tidak tercampur dengan profil baru.\n\nSudah mengunduh laporan profil lama? Lanjutkan?"))return;H=[];sv("tka_h",H)}
 U=N;if(sv("tka_u",U))toast("Data siswa disimpan di perangkat ini.");else toast("Data dipakai sementara dan tidak tersimpan karena penyimpanan peramban tidak tersedia.","warn");go("dash")}
 function resetAll(){if(!confirm("Hapus Data Saya?\n\nProfil, jawaban, skor, dan seluruh riwayat di perangkat ini akan dihapus dan tidak bisa dikembalikan. Unduh laporanmu dulu bila masih diperlukan."))return;U=null;H=[];try{localStorage.removeItem("tka_u");localStorage.removeItem("tka_h")}catch(e){}toast("Semua data telah dihapus.","warn");go("dash")}
+/* ===== Panel Data Tersimpan: ekspor / impor JSON / reset progres ===== */
+const DPCSS=".dp{margin:16px 0;border:3px solid #1a1200;border-radius:16px;overflow:hidden;background:var(--c);color:var(--t);box-shadow:0 4px 14px #0002}.dp *{box-sizing:border-box}.dp-warn{background:#FFD54A;color:#1a1200;padding:12px 16px;font-weight:700;line-height:1.45;border-bottom:3px solid #1a1200}.dp-warn b{display:block;font-size:1.05rem;letter-spacing:.02em;text-transform:uppercase}.dp-warn span{font-weight:600}.dp-in{padding:14px 16px}.dp-st{border-radius:10px;padding:10px 12px;font-weight:700;margin:0 0 12px;line-height:1.4}.dp-st.w{background:#FFE9A8;color:#3d2a00;border:2px solid #b26b00}.dp-st.o{background:#D4F5E2;color:#05341f;border:2px solid #0B7A4B}.dp-st.n{background:var(--pl);color:var(--t);border:2px solid var(--b)}.dp-btns{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 14px}.dpb{display:inline-flex;align-items:center;gap:8px;min-height:46px;padding:11px 18px;border:2px solid transparent;border-radius:12px;font:inherit;font-weight:800;color:#fff;cursor:pointer;flex:1 1 170px;justify-content:center}.dpb:hover{filter:brightness(1.12)}.dpb:focus-visible{outline:3px solid #FFD54A;outline-offset:2px}.dpb.ex{background:#0B7A4B}.dpb.im{background:#1D4ED8}.dpb.rs{background:#B91C1C}.dpb .ico{width:1.2em;height:1.2em}.dpb.im .ico{transform:rotate(180deg)}.dp h4{margin:0 0 6px;font-size:1rem}.dp-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}.dp-c{transform:none!important;margin:0!important;animation:none!important;align-self:start;border:2px solid var(--b);border-top-width:7px;border-radius:12px;padding:10px 12px;background:var(--c);font-size:.93rem;line-height:1.5}.dp-c.ex{border-top-color:#0B7A4B}.dp-c.im{border-top-color:#1D4ED8}.dp-c.rs{border-top-color:#B91C1C}.dp-c .tag{display:inline-block;color:#fff;font-weight:800;border-radius:8px;padding:2px 10px;margin-bottom:6px;font-size:.85rem;letter-spacing:.04em}.dp-c.ex .tag{background:#0B7A4B}.dp-c.im .tag{background:#1D4ED8}.dp-c.rs .tag{background:#B91C1C}.dp-c p{margin:.3em 0}.dp-c ol{margin:.3em 0;padding-left:1.2em}.dp-flow{margin:12px 0 0;background:#1a1200;color:#FFD54A;border-radius:10px;padding:10px 12px;font-weight:700;line-height:1.5}.dp-flow span{color:#fff;font-weight:600}.dp-note{margin:10px 0 0;font-size:.85rem;color:var(--m)}.dp-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#FFD54A;color:#1a1200;border:3px solid #1a1200;border-radius:12px;padding:10px 14px;margin:10px 0;font-weight:700}.dp-bar .dpb{flex:0 0 auto;min-height:40px;padding:8px 14px}.dp-bar>span{flex:1 1 220px}";
+document.head.insertAdjacentHTML("beforeend","<style>"+DPCSS+"</style>");
+const APPNAME="Program Linier Golden Knowledge Tree";
+const dpExp=()=>ld("tka_x",{t:0,last:0});
+const dpUnx=()=>{const e=dpExp();return H.filter(h=>h.id>(e.last||0))};
+function dpBanner(){const n=dpUnx().length;return n?`<div class=dp-bar role=alert><span>⚠ <b>${n} latihan belum dicadangkan.</b> Ekspor ke file JSON sebelum keluar dari aplikasi.</span><button class="dpb ex" onclick="expData()"><svg class=ico aria-hidden=true focusable=false><use href=#i-down></use></svg> Ekspor sekarang</button></div>`:""}
+function DPANEL(){const e=dpExp(),n=dpUnx().length,tg=e.t?dt(e.t):"",
+ st=!H.length&&!U?`<div class="dp-st n">Belum ada progres tersimpan di browser ini.</div>`:n?`<div class="dp-st w" role=status>⚠ ${n} latihan belum diekspor${tg?` · ekspor terakhir: ${tg}`:" · belum pernah diekspor"}. Tekan <u>Ekspor Data</u> sebelum menutup aplikasi.</div>`:`<div class="dp-st o" role=status>✓ Semua progres sudah diekspor${tg?` (${tg})`:""}. Simpan file JSON-nya baik-baik.</div>`;
+ return`<section class=dp aria-labelledby=dpt><div class=dp-warn role=note><b id=dpt>⚠ Data tersimpan di browser ini saja</b><span>dan tidak tersinkron antarperangkat. Ganti HP/laptop, pindah browser, mode privat, atau hapus data browser = progres hilang. Cadangkan ke file JSON.</span></div><div class=dp-in>${st}
+<div class=dp-btns><button class="dpb ex" onclick="expData()"><svg class=ico aria-hidden=true focusable=false><use href=#i-down></use></svg> Ekspor Data</button><button class="dpb im" onclick="document.getElementById('impf').click()"><svg class=ico aria-hidden=true focusable=false><use href=#i-down></use></svg> Impor Data</button><button class="dpb rs" onclick="resetProg()"><svg class=ico aria-hidden=true focusable=false><use href=#i-warn></use></svg> Reset Progres</button><input type=file id=impf accept=".json,application/json" hidden onchange="impData(this)"></div>
+<h4>Petunjuk penggunaan &amp; tujuannya</h4>
+<div class=dp-g>
+<div class="dp-c ex"><span class=tag>1 · EKSPOR DATA</span><p><b>Tujuan:</b> menyimpan cadangan profil, nilai, dan riwayat latihan ke file <b>.json</b>.</p><ol><li>Selesai mengerjakan, tekan <b>Ekspor Data</b>.</li><li>File <i>Data_Belajar_Nama_tanggal.json</i> terunduh.</li><li>Simpan di folder Unduhan, Google Drive, atau kirim ke WhatsApp sendiri.</li></ol></div>
+<div class="dp-c im"><span class=tag>2 · IMPOR DATA</span><p><b>Tujuan:</b> memulihkan progres di HP/laptop/browser lain, atau setelah data terhapus.</p><ol><li>Buka aplikasi ini di perangkat tujuan.</li><li>Tekan <b>Impor Data</b>, pilih file .json cadangan.</li><li>Konfirmasi. Riwayat digabung, yang sama tidak dobel.</li></ol></div>
+<div class="dp-c rs"><span class=tag>3 · RESET PROGRES</span><p><b>Tujuan:</b> mengulang belajar dari awal, atau mengosongkan perangkat bersama.</p><ol><li><b>Ekspor dulu</b> bila nilai masih diperlukan.</li><li>Tekan <b>Reset Progres</b>, baca peringatan, lalu setuju.</li></ol><p>Riwayat &amp; grafik dihapus; data siswa tetap. Tidak bisa dibatalkan kecuali impor file cadangan.</p></div>
+</div>
+<div class=dp-flow>ALUR AMAN: Kerjakan → <u>Ekspor Data</u> → Keluar. <span>Lanjut lain waktu: Buka aplikasi → Impor Data → Lanjut belajar.</span></div>
+<p class=dp-note>File JSON berisi nama dan nilai kamu. Jangan dibagikan ke sembarang orang dan jangan diubah isinya secara manual. Aplikasi tidak mengirim data ke mana pun; ekspor dan impor terjadi di perangkat ini saja.</p></div></section>`}
+async function expData(){if(!U&&!H.length)return toast("Belum ada data untuk diekspor. Isi data siswa atau kerjakan latihan dulu.","warn");
+ const o={format:"tka-backup",versi:1,aplikasi:APPNAME,diekspor:new Date().toISOString(),catatan:"Cadangan progres belajar. Impor lewat menu Impor Data. Jangan diubah manual.",profil:U,riwayat:H},
+ nm=((U&&U.nama)||"siswa").replace(/\W+/g,"_"),blob=new Blob([JSON.stringify(o,null,2)],{type:"application/json"});
+ const ok=await saveFile(`Data_Belajar_${nm}_${new Date().toISOString().slice(0,10)}.json`,blob);
+ if(ok){sv("tka_x",{t:Date.now(),last:Math.max(0,...H.map(h=>h.id))});toast("Data diekspor ke file JSON. Simpan file itu di tempat aman.");render()}}
+function vBackup(o){const bad=m=>{throw new Error(m)};
+ if(!o||typeof o!=="object"||o.format!=="tka-backup")bad("File ini bukan cadangan dari aplikasi ini (format tidak dikenali).");
+ if(!Array.isArray(o.riwayat)||o.riwayat.length>2000)bad("Isi file rusak: daftar riwayat tidak valid.");
+ const s=(x,n)=>typeof x==="string"?x.replace(/[<>]/g,"").slice(0,n):"",
+ prof=p=>{if(p==null)return null;if(typeof p!=="object")bad("Isi file rusak: data siswa tidak valid.");const r={nama:s(p.nama,80),nis:s(p.nis,20),kelas:s(p.kelas,10),jur:s(p.jur,60),sek:s(p.sek,80)};if(r.nama.trim().length<2)bad("Isi file rusak: nama siswa kosong.");return r},
+ P=prof(o.profil),seen=new Set(),Hn=[];
+ o.riwayat.forEach((h,i)=>{const w=`Isi file rusak pada riwayat ke-${i+1}.`;
+  if(!h||typeof h!=="object"||!Number.isFinite(h.id)||h.id<=0)bad(w);
+  if(!Number.isInteger(h.b)||h.b<-1||h.b>=B.length)bad(w);
+  if(!Array.isArray(h.ids)||!h.ids.length||h.ids.length>Q.length||!h.ids.every(x=>Number.isInteger(x)&&x>=0&&x<Q.length))bad(w);
+  if(!h.a||typeof h.a!=="object"||Array.isArray(h.a))bad(w);
+  const a={};Object.keys(h.a).forEach(k=>{const id=+k,v=h.a[k];if(!Number.isInteger(id)||id<0||id>=Q.length||!Number.isInteger(v)||v<0||v>=Q[id].o.length)bad(w);a[id]=v});
+  if(seen.has(h.id))return;seen.add(h.id);
+  Hn.push({id:h.id,t:s(h.t,200)||"Latihan",b:h.b,ids:h.ids.slice(),a,s:calc(h.ids,a).s,u:prof(h.u)})});
+ return{U:P,H:Hn}}
+function impData(inp){const f=inp.files&&inp.files[0];inp.value="";if(!f)return;
+ if(f.size>5e6)return toast("File terlalu besar untuk cadangan data belajar.","err");
+ const rd=new FileReader();rd.onerror=()=>toast("File tidak dapat dibaca.","err");
+ rd.onload=()=>{let o,v;try{o=JSON.parse(rd.result)}catch(e){return toast("File bukan JSON yang valid. Pilih file cadangan hasil Ekspor Data.","err")}
+  try{v=vBackup(o)}catch(e){return toast(e.message,"err")}
+  const diff=U&&v.U&&U.nama.trim().toLowerCase()!==v.U.nama.trim().toLowerCase(),nama=v.U?v.U.nama:"tanpa nama";
+  if(diff){if(!confirm(`Cadangan ini milik "${nama}", berbeda dari profil di perangkat ini ("${U.nama}").\n\nLanjutkan akan MENGGANTI profil dan seluruh riwayat di perangkat ini dengan isi file (${v.H.length} latihan).\n\nLanjutkan?`))return;U=v.U;H=v.H.sort((a,b)=>a.id-b.id);sv("tka_u",U);sv("tka_h",H);toast(`Data "${nama}" dipulihkan: ${v.H.length} latihan.`);return render()}
+  const have=new Set(H.map(h=>h.id)),add=v.H.filter(h=>!have.has(h.id));
+  if(!confirm(`Impor cadangan "${nama}"?\n\nDitemukan ${v.H.length} latihan; ${add.length} baru akan ditambahkan, ${v.H.length-add.length} sudah ada dan dilewati.`))return;
+  if(v.U&&!U){U=v.U;sv("tka_u",U)}
+  H=H.concat(add).sort((a,b)=>a.id-b.id);sv("tka_h",H);toast(add.length?`Impor berhasil: ${add.length} latihan ditambahkan.`:"Impor selesai: tidak ada data baru, semuanya sudah ada.",add.length?"ok":"warn");render()};
+ rd.readAsText(f)}
+function resetProg(){if(!H.length)return toast("Belum ada progres untuk direset.","warn");const n=dpUnx().length;
+ if(!confirm(`RESET PROGRES?\n\nSemua ${H.length} riwayat latihan/evaluasi, nilai, Pohon Pengetahuan, dan grafik di perangkat ini akan dihapus. Data siswa tetap tersimpan.\n\n${n?`⚠ ${n} latihan BELUM diekspor ke file JSON. Pilih Batal lalu tekan Ekspor Data bila masih diperlukan.`:"Progres sudah pernah diekspor. Aman bila file JSON-nya masih kamu simpan."}\n\nTindakan ini tidak bisa dibatalkan.`))return;
+ H=[];cur=null;sv("tka_h",H);toast("Progres direset. Mulai belajar dari awal.","warn");render()}
+addEventListener("beforeunload",e=>{if(dpUnx().length){e.preventDefault();e.returnValue=""}});
 function delH(id){if(!confirm("Hapus riwayat ini?"))return;H=H.filter(h=>h.id!==id);sv("tka_h",H);toast("Riwayat dihapus.","warn");render()}
 
 const RCSS0=".rp{font:14px/1.5 Arial,sans-serif;color:#000;background:#fff;padding:20px;max-width:780px;margin:auto}.rp h1{font-size:20px;margin:0}.rp h3{margin:16px 0 6px}.rp table{width:100%;border-collapse:collapse}.rp td,.rp th{border:1px solid #999;padding:4px 7px;text-align:left}.rp th{background:#eee}.rp .big{font-size:34px;font-weight:700}";
